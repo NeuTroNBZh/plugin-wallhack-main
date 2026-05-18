@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\alice\\\\OneDrive\\\\Documents\\\\Mon_Code\\\\plugincs2\\\\plugin-wallhack-main\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(dotnet build *)"
+    ]
+  }
+}

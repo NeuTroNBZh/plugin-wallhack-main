@@ -1,0 +1,73 @@
+# Build outputs
+
+bin/
+obj/
+
+# .NET user-specific files
+
+*.user
+*.rsuser
+*.suo
+
+# Visual Studio / Rider / VS Code
+
+.vs/
+.idea/
+.vscode/
+
+# Logs
+
+*.log
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# NuGet
+
+*.nupkg
+packages/
+.nuget/
+
+# Build results
+
+*.dll
+*.exe
+*.pdb
+*.cache
+*.obj
+
+# Publish output
+
+publish/
+
+# Temp files
+
+*.tmp
+*.temp
+
+# Coverage / test
+
+coverage/
+TestResults/
+
+# JetBrains Rider
+
+*.DotSettings.user
+
+# Optional: keep solution if you want
+
+# *.sln
+
+# CS2 / CounterStrikeSharp specific (if you copy builds)
+
+addons/
+csgo/
+game/
+
+# Environment files
+
+.env
+.env.*
+.fake
