@@ -1,90 +1,66 @@
-# Wallhack Plugin 2026
+# CS2 Wallhack Plugin
 
-[![Donate](https://img.shields.io/badge/Support-Donatello-blue)](https://donatello.to/opalgeorgii)
+A Counter-Strike 2 server-side plugin built on [CounterStrikeSharp](https://docs.cssharp.dev/) providing wallhack, invisibility, and fun admin commands for private/custom servers.
 
-## Overview
-
-This plugin recreates the **1 vs 5 wallhack** and **Invisible** style gameplay for **Counter-Strike 2**, inspired by videos from **dima_wallhacks**.
-
-This project was heavily inspired by the original [FunnyPlugin](https://github.com/robieless/FunnyPlugin), but it was significantly reworked and fixed so that **wallhack** and **invisibility** work as intended, **RCON** works properly, and the overall plugin is more stable, cleaner, and easier to use.
-
-For a full CS2 server installation guide, please visit my other repository: [CS2ConfigCopier](https://github.com/opalgeorgii/CS2ConfigCopier)
+> **Original plugin:** [labaland/plugin-wallhack](https://github.com/labaland/plugin-wallhack)  
+> **Maintained by:** [NeuTroNBZh](https://github.com/NeuTroNBZh)
 
 ---
 
-## Main improvements and fixes
+## Changes from the original
 
-Compared to the original inspiration, this version includes major fixes and reworks such as:
+- Reworked **Wallhack** — glow entities created per player, selectively transmitted via `OnCheckTransmit`
+- Reworked **Invisibility** — per-tick alpha blending, proper weapon and shadow hiding
+- Invisible players no longer cast shadows or expose weapon models to other players
+- Wallhack temporarily reveals invisible enemies when they make noise (shoot, reload, plant/defuse)
+- Fixed **RCON** command
+- Fixed multiple server crash bugs
+- Better command handling: aliases, partial name matching, permission validation
+- **New — Infinite Money:** grants $65 535 permanently to a player, auto-refilled on every purchase, spawn, and round start, until removed by an admin or the server restarts
 
-- fixed and reworked **Wallhack**
-- fixed and reworked **Invisibility**
-- invisible players no longer cast their player-model shadows for other players
-- invisible players no longer expose their world weapons, grenades, knives, or related world rendering to other players
-- wallhack correctly reveals invisible enemies only for a limited time when they make a sound
-- fixed **RCON**, which previously was not working correctly
-- fixed multiple bugs that could lead to **server crashes**
-- improved command handling with:
-  - command aliases
-  - partial name matching
-  - better permission handling
-- improved overall structure, stability, and usability
+---
+
+## Requirements
+
+- A CS2 dedicated server
+- [CounterStrikeSharp](https://docs.cssharp.dev/docs/guides/getting-started.html) installed
 
 ---
 
 ## Installation
 
-1. Install [CounterStrikeSharp](https://docs.cssharp.dev/docs/guides/getting-started.html) on your server.
-2. Download this plugin from the **Releases** page.
-3. Put the plugin files into:
+1. Download the latest release from the **[Releases](../../releases)** page.
+2. Copy the plugin folder to:
 
-```text
-server/game/csgo/addons/counterstrikesharp/plugins/WallhackPluginCS2
+```
+csgo/addons/counterstrikesharp/plugins/WallhackPluginCS2/
 ```
 
-4. If the `WallhackPluginCS2` folder does not exist, create it manually.
-5. Launch the server once so the plugin generates its config.
-
-For a full server installation and setup guide, please visit: [CS2ConfigCopier](https://github.com/opalgeorgii/CS2ConfigCopier)
+3. Start the server once — the plugin generates its config automatically.
 
 ---
 
 ## Admin setup
 
-To use the commands, add the player as an admin in:
-
-```text
-server/game/csgo/addons/counterstrikesharp/configs/admins.json
-```
-
-Example:
+Add admins in `csgo/addons/counterstrikesharp/configs/admins.json`:
 
 ```json
 {
-  "playername": {
-    "identity": "steamid",
-    "flags": [
-      "@css/generic",
-      "@css/rcon"
-    ]
+  "YourName": {
+    "identity": "STEAM_0:0:XXXXXXXX",
+    "flags": ["@css/generic", "@css/rcon"]
   }
 }
 ```
 
-### Permission notes
+**Permission requirements:**
 
-By default:
+| Flag | Commands |
+|---|---|
+| `@css/generic` | `!wh`, `!wallhack`, `!invis`, `!invisible`, `!money`, `!infmoney` |
+| `@css/rcon` | `!rcon` |
 
-- `@css/generic` is required for:
-  - `!wh`
-  - `!wallhack`
-  - `!invis`
-  - `!invisible`
-  - `!money`
-
-- `@css/rcon` is required for:
-  - `!rcon`
-
-You can change these permission strings later in the plugin config without recompiling the code.
+Both permission strings are configurable in the plugin config — no recompile needed.
 
 ---
 
@@ -92,73 +68,76 @@ You can change these permission strings later in the plugin config without recom
 
 ### Wallhack
 
-- `!wh <playername>`
-- `!wallhack <playername>`
-
-You can also use a **partial player name**.
-
-In many cases, the **first letter is enough** if it uniquely matches one player.
-
-Example:
-
-```text
-!wh a
+```
+!wh <player>
+!wallhack <player>
 ```
 
-If multiple players match the same partial name, type more letters until it becomes unique.
+Toggles a glowing outline through walls on the target player's enemies. Run again to remove it.
 
 ---
 
 ### Invisibility
 
-- `!invis <playername>`
-- `!invisible <playername>`
-
-You can also use a **partial player name** the same way as wallhack.
-
-Example:
-
-```text
-!invis av
 ```
+!invis <player>
+!invisible <player>
+```
+
+Toggles invisibility for the target player. The player briefly reappears to wallhackers when they shoot, reload, or make noise.
 
 ---
 
-### Money
+### Infinite Money
 
-- `!money <amount> <playername>`
-
-Partial player names work here too.
-
-Example:
-
-```text
-!money 16000 ava
 ```
+!infmoney <player>
+```
+
+Toggles permanent $65 535 for the target player. Money is automatically restored after every purchase, on every spawn, and at every round start. Run again to remove the privilege. The privilege is also removed when the player disconnects or the server restarts.
+
+---
+
+### Money (one-time)
+
+```
+!money <amount> <player>
+```
+
+Sets the target player's money to the specified amount once.
 
 ---
 
 ### RCON
 
-- `!rcon <command>`
-
-Example:
-
-```text
-!rcon mp_warmup_end
 ```
+!rcon <command>
+```
+
+Executes a server console command. Blocked commands: `quit`, `exit`, `restart`.
+
+---
+
+### Partial name matching
+
+All player-targeting commands accept partial names. Matching priority:
+
+1. Exact name
+2. Starts with query
+3. A word in the name starts with query
+4. Name contains query
+
+If multiple players match, the command lists them and asks you to be more specific.
 
 ---
 
 ## Configuration
 
-After the first launch, the plugin creates its config here:
+Auto-generated at first launch:
 
-```text
-server/game/csgo/addons/counterstrikesharp/configs/plugins/WallhackPluginCS2/WallhackPluginCS2.json
 ```
-
-Default example:
+csgo/addons/counterstrikesharp/configs/plugins/WallhackPluginCS2/WallhackPluginCS2.json
+```
 
 ```json
 {
@@ -173,46 +152,29 @@ Default example:
 }
 ```
 
-### Glow color
-
-You can change the wallhack glow color by editing:
-
-- `ColorR`
-- `ColorG`
-- `ColorB`
-
-You do **not** need to recompile the code to change these values.
+| Key | Description |
+|---|---|
+| `ColorR` / `ColorG` / `ColorB` | RGB color of the wallhack glow (0–255) |
+| `CommandPermission` | Permission flag required for most commands |
+| `RconPermission` | Permission flag required for `!rcon` |
+| `WallhackEnabled` | Enable or disable the wallhack feature entirely |
+| `InvisibleEnabled` | Enable or disable the invisibility feature entirely |
 
 ---
 
-## Notes
+## Building from source
 
-- The plugin supports partial name matching for player-based commands.
-- If a partial name matches more than one player, be more specific.
-- The target-name HUD text (`Enemy: <name>`) is controlled client-side.
-- To hide that text, the player needs to disable it manually in the client console with:
+Requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
 
-```text
-hud_showtargetid 0
+```bash
+dotnet build WallhackPluginCS2.csproj -c Release
 ```
 
----
-
-## Support
-
-If you wish to support me, you can donate here:
-
-**[Donate via Donatello](https://donatello.to/opalgeorgii)**
+Output: `bin/Release/net8.0/WallhackPluginCS2.dll`
 
 ---
 
 ## Credits
 
-- Original inspiration: [robieless/FunnyPlugin](https://github.com/robieless/FunnyPlugin)
-- Server setup guide: [opalgeorgii/CS2ConfigCopier](https://github.com/opalgeorgii/CS2ConfigCopier)
-
----
-
-## Contact
-
-If you find bugs or want to suggest improvements, open an issue in the repository.
+- **Original plugin:** [labaland](https://github.com/labaland/plugin-wallhack)
+- **Maintained & improved by:** [NeuTroNBZh](https://github.com/NeuTroNBZh)
