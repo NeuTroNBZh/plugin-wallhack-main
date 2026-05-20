@@ -55,11 +55,12 @@ public class Wallhack
         }
     }
 
-    public static HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
+    public static HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
-        // Remove all glow entities before the engine's round-start entity scans.
-        // Stale or partially-initialised glow props during those scans cause
-        // the "WriteEnterPVS: GetEntServerClass failed" server crash.
+        // Remove all glow entities at round END so they are fully gone before
+        // the next round's engine initialization and breakerandopendoor PVS scans.
+        // Cleaning up at round START is too late — the scans run before CSS fires
+        // EventRoundStart, leaving stale entities that trigger WriteEnterPVS crashes.
         PendingGlowSlots.Clear();
         foreach (var player in Globals.GlowData.Keys.ToList())
             RemoveGlow(player);
@@ -223,7 +224,7 @@ public class Wallhack
 
     public static void Setup()
     {
-        Globals.Plugin.RegisterEventHandler<EventRoundStart>(OnRoundStart);
+        Globals.Plugin.RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
         Globals.Plugin.RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
         Globals.Plugin.RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
         Globals.Plugin.RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn, HookMode.Post);
