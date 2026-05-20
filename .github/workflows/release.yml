@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from csproj
+        id: version
+        run: |
+          VERSION=$(grep -oP '(?<=<Version>)[^<]+' WallhackPluginCS2.csproj)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if release already exists
+        id: check
+        run: |
+          if gh release view "v${{ steps.version.outputs.version }}" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+
+      - uses: actions/setup-dotnet@v4
+        if: steps.check.outputs.exists == 'false'
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build
+        if: steps.check.outputs.exists == 'false'
+        run: dotnet build WallhackPluginCS2.csproj -c Release
+
+      - name: Package
+        if: steps.check.outputs.exists == 'false'
+        id: package
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          NAME="WallhackPluginCS2-${VERSION}-linux-x64"
+          PLUGIN_DIR="${NAME}/addons/counterstrikesharp/plugins/WallhackPluginCS2"
+          mkdir -p "${PLUGIN_DIR}"
+          cp bin/Release/net8.0/WallhackPluginCS2.dll "${PLUGIN_DIR}/"
+          zip -r "${NAME}.zip" "${NAME}"
+          echo "name=${NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish release
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          NAME="${{ steps.package.outputs.name }}"
+          gh release create "v${VERSION}" \
+            "${NAME}.zip#${NAME}.zip" \
+            --title "v${VERSION}" \
+            --notes "## Installation
+
+          1. Télécharge \`${NAME}.zip\`
+          2. Extrais et copie le dossier \`addons/\` dans \`server/game/csgo/\`
+          3. Démarre le serveur — la config se génère automatiquement"
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
