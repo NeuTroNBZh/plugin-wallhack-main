@@ -28,11 +28,17 @@ public static class Globals
 
     public static HashSet<CCSPlayerController> InfiniteMoneyPlayers { get; } = new();
 
+    public static HashSet<CCSPlayerController> GodPlayers { get; } = new();
+
+    public static Dictionary<CCSPlayerController, float> SpeedPlayers { get; } = new();
+
     public static void Reset()
     {
         Wallhackers.Clear();
         GlowData.Clear();
         InvisiblePlayers.Clear();
         InfiniteMoneyPlayers.Clear();
+        GodPlayers.Clear();
+        SpeedPlayers.Clear();
     }
 }

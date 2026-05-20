@@ -157,12 +157,13 @@ public class Wallhack
         modelRelay.DispatchSpawn();
         glowEntity.DispatchSpawn();
 
+        bool isT = player.Team == CsTeam.Terrorist;
         glowEntity.Glow.GlowRange = 5000;
         glowEntity.Glow.GlowRangeMin = 0;
-        glowEntity.Glow.GlowColorOverride = Color.FromArgb(255, Globals.Config.R, Globals.Config.G, Globals.Config.B);
-        glowEntity.Glow.GlowTeam = player.Team == CsTeam.Terrorist
-            ? (int)CsTeam.CounterTerrorist
-            : (int)CsTeam.Terrorist;
+        glowEntity.Glow.GlowColorOverride = isT
+            ? Color.FromArgb(255, Globals.Config.R, Globals.Config.G, Globals.Config.B)
+            : Color.FromArgb(255, Globals.Config.CTR, Globals.Config.CTG, Globals.Config.CTB);
+        glowEntity.Glow.GlowTeam = isT ? (int)CsTeam.CounterTerrorist : (int)CsTeam.Terrorist;
         glowEntity.Glow.GlowType = 3;
 
         Globals.GlowData[player] = new GlowData

@@ -190,6 +190,35 @@ public class Invisible
         return HookResult.Continue;
     }
 
+    public static void RestorePlayer(CCSPlayerController player)
+    {
+        var pawn = player.PlayerPawn?.Value;
+        if (pawn == null || !pawn.IsValid)
+            return;
+
+        pawn.Render = Color.FromArgb(255, pawn.Render);
+        Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+
+        pawn.ShadowStrength = 1.0f;
+        Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_flShadowStrength");
+
+        if (pawn.WeaponServices == null)
+            return;
+
+        foreach (var handle in pawn.WeaponServices.MyWeapons)
+        {
+            var weapon = handle.Value;
+            if (weapon == null || !weapon.IsValid)
+                continue;
+
+            weapon.Render = Color.FromArgb(255, weapon.Render);
+            Utilities.SetStateChanged(weapon, "CBaseModelEntity", "m_clrRender");
+
+            weapon.ShadowStrength = 1.0f;
+            Utilities.SetStateChanged(weapon, "CBaseModelEntity", "m_flShadowStrength");
+        }
+    }
+
     private static void ResetInvisibleState(CCSPlayerController player)
     {
         if (!Globals.InvisiblePlayers.TryGetValue(player, out var data))

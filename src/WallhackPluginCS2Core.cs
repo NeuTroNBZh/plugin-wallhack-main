@@ -9,14 +9,25 @@ namespace WallhackPluginCS2;
 
 public class WallhackConfig : BasePluginConfig
 {
+    // Terrorist glow color
     [JsonPropertyName("ColorR")]
     public byte R { get; set; } = 255;
 
     [JsonPropertyName("ColorG")]
-    public byte G { get; set; } = 0;
+    public byte G { get; set; } = 100;
 
     [JsonPropertyName("ColorB")]
-    public byte B { get; set; } = 128;
+    public byte B { get; set; } = 0;
+
+    // Counter-Terrorist glow color
+    [JsonPropertyName("ColorCT_R")]
+    public byte CTR { get; set; } = 0;
+
+    [JsonPropertyName("ColorCT_G")]
+    public byte CTG { get; set; } = 100;
+
+    [JsonPropertyName("ColorCT_B")]
+    public byte CTB { get; set; } = 255;
 
     [JsonPropertyName("CommandPermission")]
     public string AdminPermission { get; set; } = "@css/generic";
@@ -29,20 +40,18 @@ public class WallhackConfig : BasePluginConfig
 
     [JsonPropertyName("InvisibleEnabled")]
     public bool InvisibleEnabled { get; set; } = true;
+
+    [JsonPropertyName("InfiniteMoneyEnabled")]
+    public bool InfiniteMoneyEnabled { get; set; } = true;
 }
 
 public class WallhackPluginCS2Core : BasePlugin, IPluginConfig<WallhackConfig>
 {
     public override string ModuleName => "Wallhack Plugin CS2";
-    public override string ModuleVersion => "2.0.0";
+    public override string ModuleVersion => "2.1.0";
     public override string ModuleAuthor => "NeuTroNBZh";
 
     public WallhackConfig Config { get; set; } = new();
-
-    private const string CommandMoneyName = "css_money";
-    private const string CommandMoneyAlias = "money";
-    private const string CommandRconName = "css_rcon";
-    private const string CommandRconAlias = "rcon";
 
     public override void Load(bool hotReload)
     {
@@ -52,25 +61,34 @@ public class WallhackPluginCS2Core : BasePlugin, IPluginConfig<WallhackConfig>
             Globals.Reset();
 
         RegisterListener<Listeners.CheckTransmit>(OnCheckTransmit);
+        RegisterListener<Listeners.OnTick>(OnTick);
 
-        if (Config.InvisibleEnabled)
-            RegisterListener<Listeners.OnTick>(OnTick);
-
-        AddCommand(CommandMoneyName, "Gives a player money", CommandMoney.OnMoneyCommand);
-        AddCommand(CommandMoneyAlias, "Gives a player money", CommandMoney.OnMoneyCommand);
-
-        AddCommand(CommandRconName, "Runs a command", CommandRcon.OnRconCommand);
-        AddCommand(CommandRconAlias, "Runs a command", CommandRcon.OnRconCommand);
+        AddCommand("css_money",    "Gives a player money",              CommandMoney.OnMoneyCommand);
+        AddCommand("money",        "Gives a player money",              CommandMoney.OnMoneyCommand);
+        AddCommand("css_rcon",     "Runs a command",                    CommandRcon.OnRconCommand);
+        AddCommand("rcon",         "Runs a command",                    CommandRcon.OnRconCommand);
+        AddCommand("css_slay",     "Kill a player",                     CommandSlay.OnSlayCommand);
+        AddCommand("slay",         "Kill a player",                     CommandSlay.OnSlayCommand);
+        AddCommand("css_slap",     "Slap a player for damage",          CommandSlap.OnSlapCommand);
+        AddCommand("slap",         "Slap a player for damage",          CommandSlap.OnSlapCommand);
+        AddCommand("css_status",   "Show active privileges for player", CommandStatus.OnStatusCommand);
+        AddCommand("status",       "Show active privileges for player", CommandStatus.OnStatusCommand);
+        AddCommand("css_resetall", "Remove all player privileges",      CommandResetAll.OnResetAllCommand);
+        AddCommand("resetall",     "Remove all player privileges",      CommandResetAll.OnResetAllCommand);
 
         try
         {
-            if (Config.InvisibleEnabled)
-                Invisible.Setup();
-
             if (Config.WallhackEnabled)
                 Wallhack.Setup();
 
-            InfiniteMoney.Setup();
+            if (Config.InvisibleEnabled)
+                Invisible.Setup();
+
+            if (Config.InfiniteMoneyEnabled)
+                InfiniteMoney.Setup();
+
+            God.Setup();
+            Speed.Setup();
         }
         catch (Exception ex)
         {
@@ -78,9 +96,11 @@ public class WallhackPluginCS2Core : BasePlugin, IPluginConfig<WallhackConfig>
         }
 
         Logger.LogInformation(
-            "WallhackPluginCS2 loaded | Wallhack: {WallhackEnabled}, Invisible: {InvisibleEnabled}",
+            "WallhackPluginCS2 v{Version} loaded | WH:{WH} Invis:{Invis} Money:{Money}",
+            ModuleVersion,
             Config.WallhackEnabled,
-            Config.InvisibleEnabled
+            Config.InvisibleEnabled,
+            Config.InfiniteMoneyEnabled
         );
     }
 
@@ -88,30 +108,31 @@ public class WallhackPluginCS2Core : BasePlugin, IPluginConfig<WallhackConfig>
     {
         try
         {
-            if (Config.InvisibleEnabled)
-                Invisible.Cleanup();
-
             if (Config.WallhackEnabled)
                 Wallhack.Cleanup();
 
-            InfiniteMoney.Cleanup();
+            if (Config.InvisibleEnabled)
+                Invisible.Cleanup();
+
+            if (Config.InfiniteMoneyEnabled)
+                InfiniteMoney.Cleanup();
+
+            God.Cleanup();
+            Speed.Cleanup();
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error during cleanup");
         }
-
-        Logger.LogInformation(
-            "WallhackPluginCS2 unloaded | Wallhack: {WallhackEnabled}, Invisible: {InvisibleEnabled}",
-            Config.WallhackEnabled,
-            Config.InvisibleEnabled
-        );
     }
 
     public void OnTick()
     {
         if (Config.InvisibleEnabled)
             Invisible.OnTick();
+
+        God.OnTick();
+        Speed.OnTick();
     }
 
     public void OnCheckTransmit(CCheckTransmitInfoList infoList)
@@ -131,14 +152,18 @@ public class WallhackPluginCS2Core : BasePlugin, IPluginConfig<WallhackConfig>
 
     public void OnConfigParsed(WallhackConfig config)
     {
-        Config.R = ClampByte(config.R);
-        Config.G = ClampByte(config.G);
-        Config.B = ClampByte(config.B);
+        Config.R   = ClampByte(config.R);
+        Config.G   = ClampByte(config.G);
+        Config.B   = ClampByte(config.B);
+        Config.CTR = ClampByte(config.CTR);
+        Config.CTG = ClampByte(config.CTG);
+        Config.CTB = ClampByte(config.CTB);
 
-        Config.AdminPermission = config.AdminPermission;
-        Config.RconPermission = config.RconPermission;
-        Config.WallhackEnabled = config.WallhackEnabled;
-        Config.InvisibleEnabled = config.InvisibleEnabled;
+        Config.AdminPermission     = config.AdminPermission;
+        Config.RconPermission      = config.RconPermission;
+        Config.WallhackEnabled     = config.WallhackEnabled;
+        Config.InvisibleEnabled    = config.InvisibleEnabled;
+        Config.InfiniteMoneyEnabled = config.InfiniteMoneyEnabled;
 
         Globals.Config = Config;
     }

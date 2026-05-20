@@ -1,6 +1,6 @@
 # CS2 Wallhack Plugin
 
-A Counter-Strike 2 server-side plugin built on [CounterStrikeSharp](https://docs.cssharp.dev/) providing wallhack, invisibility, and fun admin commands for private/custom servers.
+A Counter-Strike 2 server-side plugin built on [CounterStrikeSharp](https://docs.cssharp.dev/) providing wallhack, invisibility, and admin commands for private/custom servers.
 
 > **Original plugin:** [labaland/plugin-wallhack](https://github.com/labaland/plugin-wallhack)  
 > **Maintained by:** [NeuTroNBZh](https://github.com/NeuTroNBZh)
@@ -9,14 +9,19 @@ A Counter-Strike 2 server-side plugin built on [CounterStrikeSharp](https://docs
 
 ## Changes from the original
 
-- Reworked **Wallhack** — glow entities created per player, selectively transmitted via `OnCheckTransmit`
-- Reworked **Invisibility** — per-tick alpha blending, proper weapon and shadow hiding
+- Reworked **Wallhack** — glow entities per player, selectively transmitted via `OnCheckTransmit`; per-team glow color (T and CT separate colors)
+- Reworked **Invisibility** — per-tick alpha blending, proper weapon and shadow hiding; target and admin both notified on toggle
 - Invisible players no longer cast shadows or expose weapon models to other players
 - Wallhack temporarily reveals invisible enemies when they make noise (shoot, reload, plant/defuse)
 - Fixed **RCON** command
 - Fixed multiple server crash bugs
-- Better command handling: aliases, partial name matching, permission validation
-- **New — Infinite Money:** grants $65 535 permanently to a player, auto-refilled on every purchase, spawn, and round start, until removed by an admin or the server restarts
+- Improved command handling: aliases, partial name matching, permission validation
+- **New — Infinite Money:** grants $65 535 permanently, auto-refilled on every purchase, spawn and round start
+- **New — God mode:** invincibility toggle, health restored every tick
+- **New — Speed boost:** configurable multiplier (default 1.5×), reset on toggle
+- **New — Slay / Slap:** kill or deal damage to a player
+- **New — Status:** view all active privileges for a player
+- **New — Reset All:** remove every privilege from every player at once
 
 ---
 
@@ -57,10 +62,8 @@ Add admins in `csgo/addons/counterstrikesharp/configs/admins.json`:
 
 | Flag | Commands |
 |---|---|
-| `@css/generic` | `!wh`, `!wallhack`, `!invis`, `!invisible`, `!money`, `!infmoney` |
+| `@css/generic` | All commands below except `!rcon` |
 | `@css/rcon` | `!rcon` |
-
-Both permission strings are configurable in the plugin config — no recompile needed.
 
 ---
 
@@ -73,7 +76,7 @@ Both permission strings are configurable in the plugin config — no recompile n
 !wallhack <player>
 ```
 
-Toggles a glowing outline through walls on the target player's enemies. Run again to remove it.
+Toggles a glowing outline through walls for the target player's enemies. The target is notified. Run again to remove.
 
 ---
 
@@ -84,7 +87,48 @@ Toggles a glowing outline through walls on the target player's enemies. Run agai
 !invisible <player>
 ```
 
-Toggles invisibility for the target player. The player briefly reappears to wallhackers when they shoot, reload, or make noise.
+Toggles invisibility. The target is notified. Invisible players briefly reappear to wallhackers when they shoot, reload, or make noise.
+
+---
+
+### God mode
+
+```
+!god <player>
+```
+
+Toggles invincibility. Health is restored every server tick, preventing any lethal hit.
+
+---
+
+### Speed boost
+
+```
+!speed <player>              → toggle 1.5× speed
+!speed <multiplier> <player> → set a custom multiplier (0.1–10)
+```
+
+Running `!speed <player>` again when they already have speed removes it.
+
+---
+
+### Slay
+
+```
+!slay <player>
+```
+
+Kills the target player instantly.
+
+---
+
+### Slap
+
+```
+!slap <damage> <player>
+```
+
+Deals the specified amount of damage. Kills if damage exceeds current health.
 
 ---
 
@@ -94,7 +138,7 @@ Toggles invisibility for the target player. The player briefly reappears to wall
 !infmoney <player>
 ```
 
-Toggles permanent $65 535 for the target player. Money is automatically restored after every purchase, on every spawn, and at every round start. Run again to remove the privilege. The privilege is also removed when the player disconnects or the server restarts.
+Toggles permanent $65 535. Money is restored after every purchase, spawn, and round start. Removed on disconnect or server restart.
 
 ---
 
@@ -104,7 +148,27 @@ Toggles permanent $65 535 for the target player. Money is automatically restored
 !money <amount> <player>
 ```
 
-Sets the target player's money to the specified amount once.
+Sets the target player's money once.
+
+---
+
+### Status
+
+```
+!status <player>
+```
+
+Displays all currently active privileges for the target player (wallhack, invisible, god, speed, infinite money).
+
+---
+
+### Reset All
+
+```
+!resetall
+```
+
+Removes every privilege from every player at once and broadcasts to all players.
 
 ---
 
@@ -142,23 +206,29 @@ csgo/addons/counterstrikesharp/configs/plugins/WallhackPluginCS2/WallhackPluginC
 ```json
 {
   "ColorR": 255,
-  "ColorG": 0,
-  "ColorB": 128,
+  "ColorG": 100,
+  "ColorB": 0,
+  "ColorCT_R": 0,
+  "ColorCT_G": 100,
+  "ColorCT_B": 255,
   "CommandPermission": "@css/generic",
   "RconPermission": "@css/rcon",
   "WallhackEnabled": true,
   "InvisibleEnabled": true,
+  "InfiniteMoneyEnabled": true,
   "ConfigVersion": 1
 }
 ```
 
 | Key | Description |
 |---|---|
-| `ColorR` / `ColorG` / `ColorB` | RGB color of the wallhack glow (0–255) |
+| `ColorR/G/B` | RGB glow color for **Terrorist** players |
+| `ColorCT_R/G/B` | RGB glow color for **Counter-Terrorist** players |
 | `CommandPermission` | Permission flag required for most commands |
 | `RconPermission` | Permission flag required for `!rcon` |
 | `WallhackEnabled` | Enable or disable the wallhack feature entirely |
 | `InvisibleEnabled` | Enable or disable the invisibility feature entirely |
+| `InfiniteMoneyEnabled` | Enable or disable the infinite money feature entirely |
 
 ---
 
@@ -171,6 +241,8 @@ dotnet build WallhackPluginCS2.csproj -c Release
 ```
 
 Output: `bin/Release/net8.0/WallhackPluginCS2.dll`
+
+A release is automatically published to GitHub on every push when the `<Version>` in `WallhackPluginCS2.csproj` changes.
 
 ---
 

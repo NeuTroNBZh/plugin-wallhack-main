@@ -1,13 +1,12 @@
-using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 
 namespace WallhackPluginCS2.Commands;
 
-public class CommandWallhack
+public class CommandGod
 {
-    public static void OnWallhackCommand(CCSPlayerController? caller, CommandInfo command)
+    public static void OnGodCommand(CCSPlayerController? caller, CommandInfo command)
     {
         if (!Util.IsPlayerValid(caller))
             return;
@@ -21,7 +20,7 @@ public class CommandWallhack
         string query = command.ArgString.Trim();
         if (string.IsNullOrWhiteSpace(query))
         {
-            Util.ServerPrintToChat(caller, "Usage: !wh <player> | !wallhack <player>");
+            Util.ServerPrintToChat(caller, "Usage: !god <player>");
             return;
         }
 
@@ -31,16 +30,16 @@ public class CommandWallhack
             return;
         }
 
-        if (Globals.Wallhackers.Remove(target))
+        if (Globals.GodPlayers.Remove(target))
         {
-            Util.ServerPrintToChat(caller, $"Wallhack OFF for {target.PlayerName}.");
-            Util.ServerPrintToChat(target, "Your wallhack has been removed.");
+            Util.ServerPrintToChat(caller, $"God mode OFF for {target.PlayerName}.");
+            Util.ServerPrintToChat(target, "God mode has been removed.");
         }
         else
         {
-            Globals.Wallhackers.Add(target);
-            Util.ServerPrintToChat(caller, $"Wallhack ON for {target.PlayerName}.");
-            Util.ServerPrintToChat(target, "You now have wallhack!");
+            Globals.GodPlayers.Add(target);
+            Util.ServerPrintToChat(caller, $"God mode ON for {target.PlayerName}.");
+            Util.ServerPrintToChat(target, "You now have god mode!");
         }
     }
 }
