@@ -28,7 +28,7 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
+          GH_TOKEN: ${{ secrets.PAT || github.token }}
 
       - uses: actions/setup-dotnet@v4
         if: steps.check.outputs.exists == 'false'
@@ -61,8 +61,8 @@ jobs:
             --title "v${VERSION}" \
             --notes "## Installation
 
-          1. Télécharge \`${NAME}.zip\`
-          2. Extrais et copie le dossier \`addons/\` dans \`server/game/csgo/\`
-          3. Démarre le serveur — la config se génère automatiquement"
+          1. Download \`${NAME}.zip\`
+          2. Extract and copy the \`addons/\` folder into \`server/game/csgo/\`
+          3. Start the server — the config is generated automatically"
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
+          GH_TOKEN: ${{ secrets.PAT || github.token }}
