@@ -55,6 +55,18 @@ public class Wallhack
         }
     }
 
+    public static HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
+    {
+        // Remove all glow entities before the engine's round-start entity scans.
+        // Stale or partially-initialised glow props during those scans cause
+        // the "WriteEnterPVS: GetEntServerClass failed" server crash.
+        PendingGlowSlots.Clear();
+        foreach (var player in Globals.GlowData.Keys.ToList())
+            RemoveGlow(player);
+
+        return HookResult.Continue;
+    }
+
     public static HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
     {
         var player = @event.Userid;
@@ -99,7 +111,7 @@ public class Wallhack
         if (!PendingGlowSlots.Add(player.Slot))
             return;
 
-        Globals.Plugin.AddTimer(0.20f, () =>
+        Globals.Plugin.AddTimer(0.5f, () =>
         {
             PendingGlowSlots.Remove(player.Slot);
 
@@ -139,17 +151,24 @@ public class Wallhack
             return;
 
         var modelRelay = Utilities.CreateEntityByName<CDynamicProp>("prop_dynamic");
-        var glowEntity = Utilities.CreateEntityByName<CDynamicProp>("prop_dynamic");
-
-        if (modelRelay == null || glowEntity == null)
+        if (modelRelay == null)
             return;
 
-        modelRelay.Spawnflags = 256;
-        modelRelay.Render = Color.Transparent;
-        modelRelay.RenderMode = RenderMode_t.kRenderNone;
+        var glowEntity = Utilities.CreateEntityByName<CDynamicProp>("prop_dynamic");
+        if (glowEntity == null)
+        {
+            // modelRelay is alive in the staging list — spawn then remove it so the
+            // engine never tries to enter it into a PVS without a ServerClass.
+            modelRelay.DispatchSpawn();
+            modelRelay.Remove();
+            return;
+        }
 
+        // Only non-replicated flags before DispatchSpawn — setting Render / RenderMode
+        // before spawning puts network state on a staging entity, which triggers the
+        // EF_IN_STAGING_LIST assertion and can lead to the WriteEnterPVS crash.
+        modelRelay.Spawnflags = 256;
         glowEntity.Spawnflags = 256;
-        glowEntity.Render = Color.FromArgb(1, 0, 0, 0);
 
         modelRelay.SetModel(model);
         glowEntity.SetModel(model);
@@ -157,30 +176,21 @@ public class Wallhack
         modelRelay.DispatchSpawn();
         glowEntity.DispatchSpawn();
 
-        bool isT = player.Team == CsTeam.Terrorist;
-        glowEntity.Glow.GlowRange = 5000;
-        glowEntity.Glow.GlowRangeMin = 0;
-        glowEntity.Glow.GlowColorOverride = isT
-            ? Color.FromArgb(255, Globals.Config.R, Globals.Config.G, Globals.Config.B)
-            : Color.FromArgb(255, Globals.Config.CTR, Globals.Config.CTG, Globals.Config.CTB);
-        glowEntity.Glow.GlowTeam = isT ? (int)CsTeam.CounterTerrorist : (int)CsTeam.Terrorist;
-        glowEntity.Glow.GlowType = 3;
+        // Register before NextFrame so RemoveGlow can clean up if validation fails.
+        Globals.GlowData[player] = new GlowData { GlowEnt = glowEntity, ModelRelay = modelRelay };
 
-        Globals.GlowData[player] = new GlowData
-        {
-            GlowEnt = glowEntity,
-            ModelRelay = modelRelay
-        };
-
+        // Apply all visual and glow properties in the next frame.
+        // By then both entities are fully registered and out of the staging list,
+        // so modifying their network state is safe.
         Server.NextFrame(() =>
         {
-            if (!Util.IsPlayerValid(player) || !player.PawnIsAlive)
+            if (!Globals.GlowData.ContainsKey(player) || !modelRelay.IsValid || !glowEntity.IsValid)
             {
                 RemoveGlow(player);
                 return;
             }
 
-            if (!modelRelay.IsValid || !glowEntity.IsValid)
+            if (!Util.IsPlayerValid(player) || !player.PawnIsAlive)
             {
                 RemoveGlow(player);
                 return;
@@ -193,6 +203,19 @@ public class Wallhack
                 return;
             }
 
+            modelRelay.Render = Color.Transparent;
+            modelRelay.RenderMode = RenderMode_t.kRenderNone;
+            glowEntity.Render = Color.FromArgb(1, 0, 0, 0);
+
+            bool isT = player.Team == CsTeam.Terrorist;
+            glowEntity.Glow.GlowRange = 5000;
+            glowEntity.Glow.GlowRangeMin = 0;
+            glowEntity.Glow.GlowColorOverride = isT
+                ? Color.FromArgb(255, Globals.Config.R, Globals.Config.G, Globals.Config.B)
+                : Color.FromArgb(255, Globals.Config.CTR, Globals.Config.CTG, Globals.Config.CTB);
+            glowEntity.Glow.GlowTeam = isT ? (int)CsTeam.CounterTerrorist : (int)CsTeam.Terrorist;
+            glowEntity.Glow.GlowType = 3;
+
             modelRelay.AcceptInput("FollowEntity", livePawn, modelRelay, "!activator");
             glowEntity.AcceptInput("FollowEntity", modelRelay, glowEntity, "!activator");
         });
@@ -200,6 +223,7 @@ public class Wallhack
 
     public static void Setup()
     {
+        Globals.Plugin.RegisterEventHandler<EventRoundStart>(OnRoundStart);
         Globals.Plugin.RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
         Globals.Plugin.RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
         Globals.Plugin.RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn, HookMode.Post);
@@ -209,7 +233,7 @@ public class Wallhack
         Globals.Plugin.AddCommand("wh", "Gives a player walls", CommandWallhack.OnWallhackCommand);
         Globals.Plugin.AddCommand("wallhack", "Gives a player walls", CommandWallhack.OnWallhackCommand);
 
-        Globals.Plugin.AddTimer(0.50f, () =>
+        Globals.Plugin.AddTimer(0.5f, () =>
         {
             foreach (var player in Util.GetValidPlayers().Where(p => p.PawnIsAlive))
                 ScheduleGlow(player);
