@@ -142,6 +142,12 @@ public class Wallhack
         {
             PendingGlowSlots.Remove(player.Slot);
 
+            // CSS timers cannot be cancelled. A timer queued in round N can fire
+            // after OnRoundEnd sets _roundInProgress = false, during round N+1's
+            // engine scan window. Guard here to prevent CreateGlow in that case.
+            if (!_roundInProgress)
+                return;
+
             if (!Util.IsPlayerValid(player) || !player.PawnIsAlive)
                 return;
 
