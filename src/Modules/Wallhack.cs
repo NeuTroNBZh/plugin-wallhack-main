@@ -12,6 +12,10 @@ public class Wallhack
 {
     private static readonly HashSet<int> PendingGlowSlots = new();
 
+    // True once CSS EventRoundStart fires (which is AFTER all breakerandopendoor scans).
+    // Used to block glow creation during the round-start entity-scan window.
+    private static bool _roundInProgress = false;
+
     public static void OnPlayerTransmit(CCheckTransmitInfo info, CCSPlayerController viewer)
     {
         if (!Util.IsPlayerValid(viewer))
@@ -57,13 +61,28 @@ public class Wallhack
 
     public static HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
-        // Remove all glow entities at round END so they are fully gone before
-        // the next round's engine initialization and breakerandopendoor PVS scans.
-        // Cleaning up at round START is too late — the scans run before CSS fires
-        // EventRoundStart, leaving stale entities that trigger WriteEnterPVS crashes.
+        // Mark round as not in progress so OnPlayerSpawn ignores the next spawn wave.
+        // Remove all glow entities now so they are gone before the next round's
+        // engine initialization and breakerandopendoor scans.
+        _roundInProgress = false;
         PendingGlowSlots.Clear();
         foreach (var player in Globals.GlowData.Keys.ToList())
             RemoveGlow(player);
+
+        return HookResult.Continue;
+    }
+
+    public static HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
+    {
+        // CSS EventRoundStart fires AFTER all breakerandopendoor entity scans, so it
+        // is safe to create glow entities from here. OnPlayerSpawn fires BEFORE these
+        // scans and must not create entities (guarded by _roundInProgress below).
+        _roundInProgress = true;
+        Globals.Plugin.AddTimer(0.5f, () =>
+        {
+            foreach (var player in Util.GetValidPlayers().Where(p => p.PawnIsAlive))
+                ScheduleGlow(player);
+        });
 
         return HookResult.Continue;
     }
@@ -74,7 +93,14 @@ public class Wallhack
         if (!Util.IsPlayerEntityValid(player))
             return HookResult.Continue;
 
-        ScheduleGlow(player);
+        // At round start, PlayerSpawn fires during the engine's entity-scan window
+        // (before EventRoundStart). Creating CDynamicProp entities during that window
+        // causes "WriteEnterPVS: GetEntServerClass failed" crashes.
+        // OnRoundStart handles glow creation for the round-start spawn wave.
+        // This path only handles mid-round spawns (e.g. after death in retake).
+        if (_roundInProgress)
+            ScheduleGlow(player);
+
         return HookResult.Continue;
     }
 
@@ -225,6 +251,7 @@ public class Wallhack
     public static void Setup()
     {
         Globals.Plugin.RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
+        Globals.Plugin.RegisterEventHandler<EventRoundStart>(OnRoundStart);
         Globals.Plugin.RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
         Globals.Plugin.RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
         Globals.Plugin.RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn, HookMode.Post);
@@ -234,8 +261,10 @@ public class Wallhack
         Globals.Plugin.AddCommand("wh", "Gives a player walls", CommandWallhack.OnWallhackCommand);
         Globals.Plugin.AddCommand("wallhack", "Gives a player walls", CommandWallhack.OnWallhackCommand);
 
+        // Hot-reload: a round is already in progress, create glows for alive players.
         Globals.Plugin.AddTimer(0.5f, () =>
         {
+            _roundInProgress = true;
             foreach (var player in Util.GetValidPlayers().Where(p => p.PawnIsAlive))
                 ScheduleGlow(player);
         });
@@ -243,6 +272,7 @@ public class Wallhack
 
     public static void Cleanup()
     {
+        _roundInProgress = false;
         PendingGlowSlots.Clear();
 
         foreach (var data in Globals.GlowData.Values)

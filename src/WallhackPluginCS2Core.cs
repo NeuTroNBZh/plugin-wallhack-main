@@ -48,7 +48,7 @@ public class WallhackConfig : BasePluginConfig
 public class WallhackPluginCS2Core : BasePlugin, IPluginConfig<WallhackConfig>
 {
     public override string ModuleName => "Wallhack Plugin CS2";
-    public override string ModuleVersion => "2.1.2";
+    public override string ModuleVersion => "2.1.3";
     public override string ModuleAuthor => "NeuTroNBZh";
 
     public WallhackConfig Config { get; set; } = new();
