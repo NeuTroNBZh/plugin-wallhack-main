@@ -36,15 +36,12 @@ public class Wallhack
                 continue;
             }
 
-            bool isInvisible = Globals.InvisiblePlayers.TryGetValue(target, out var invisData);
-            bool isRevealed = !isInvisible || Server.CurrentTime <= invisData.RevealUntil;
-
             bool shouldSee =
                 Globals.Wallhackers.Contains(viewer) &&
                 viewer.Team != CsTeam.Spectator &&
                 target.Team != CsTeam.Spectator &&
                 target.Team != viewer.Team &&
-                isRevealed;
+                !Globals.InvisiblePlayers.Contains(target);
 
             if (shouldSee)
             {

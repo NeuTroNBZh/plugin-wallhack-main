@@ -1,8 +1,6 @@
-using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
-using WallhackPluginCS2.Models;
 using WallhackPluginCS2.Modules;
 
 namespace WallhackPluginCS2.Commands;
@@ -42,16 +40,10 @@ public class CommandInvisible
         bool silent = SimpleAdminBridge.IsAdminSilent(caller);
 
         bool wasInvisible = Globals.InvisiblePlayers.Remove(target);
-        Invisible.RestorePlayer(target);
-
-        if (!wasInvisible)
-        {
-            Globals.InvisiblePlayers[target] = new SoundData(Server.CurrentTime - 0.01f, Server.CurrentTime - 0.01f)
-            {
-                HackyReload = false,
-                RevealUntil = 0f
-            };
-        }
+        if (wasInvisible)
+            Invisible.RestorePlayer(target);
+        else
+            Globals.InvisiblePlayers.Add(target);
 
         if (isSelf)
         {

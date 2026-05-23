@@ -24,7 +24,7 @@ public static class Globals
 
     public static Dictionary<CCSPlayerController, GlowData> GlowData { get; } = new();
 
-    public static Dictionary<CCSPlayerController, SoundData> InvisiblePlayers { get; } = new();
+    public static HashSet<CCSPlayerController> InvisiblePlayers { get; } = new();
 
     public static HashSet<CCSPlayerController> InfiniteMoneyPlayers { get; } = new();
 

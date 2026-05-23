@@ -39,8 +39,20 @@ public class Speed
         Globals.Plugin.AddCommand("speed", "Toggle speed boost for a player", CommandSpeed.OnSpeedCommand);
     }
 
+    public static void ResetPlayer(CCSPlayerController player)
+    {
+        var pawn = player.PlayerPawn?.Value;
+        if (pawn != null && pawn.IsValid)
+            pawn.VelocityModifier = 1.0f;
+    }
+
     public static void Cleanup()
     {
+        foreach (var player in Globals.SpeedPlayers.Keys.ToList())
+        {
+            if (Util.IsPlayerValid(player))
+                ResetPlayer(player);
+        }
         Globals.SpeedPlayers.Clear();
     }
 }

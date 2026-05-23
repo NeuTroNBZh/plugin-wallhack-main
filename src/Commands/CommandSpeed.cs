@@ -69,6 +69,7 @@ public class CommandSpeed
 
         if (!explicitMultiplier && Globals.SpeedPlayers.Remove(target))
         {
+            Speed.ResetPlayer(target);
             if (isSelf)
                 Util.ServerPrintToChat(caller, "Speed boost OFF.");
             else

@@ -18,7 +18,7 @@ public class CommandResetAll
             return;
         }
 
-        foreach (var player in Globals.InvisiblePlayers.Keys.ToList())
+        foreach (var player in Globals.InvisiblePlayers.ToList())
         {
             if (Util.IsPlayerValid(player))
                 Invisible.RestorePlayer(player);

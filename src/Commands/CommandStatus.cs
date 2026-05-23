@@ -31,7 +31,7 @@ public class CommandStatus
         }
 
         bool wh    = Globals.Wallhackers.Contains(target);
-        bool invis = Globals.InvisiblePlayers.ContainsKey(target);
+        bool invis = Globals.InvisiblePlayers.Contains(target);
         bool god   = Globals.GodPlayers.Contains(target);
         bool money = Globals.InfiniteMoneyPlayers.Contains(target);
         bool hasSpeed = Globals.SpeedPlayers.TryGetValue(target, out float speed);
