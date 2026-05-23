@@ -48,7 +48,7 @@ public class WallhackConfig : BasePluginConfig
 public class WallhackPluginCS2Core : BasePlugin, IPluginConfig<WallhackConfig>
 {
     public override string ModuleName => "Wallhack Plugin CS2";
-    public override string ModuleVersion => "2.1.4";
+    public override string ModuleVersion => "2.2.0";
     public override string ModuleAuthor => "NeuTroNBZh";
 
     public WallhackConfig Config { get; set; } = new();
@@ -75,6 +75,8 @@ public class WallhackPluginCS2Core : BasePlugin, IPluginConfig<WallhackConfig>
         AddCommand("status",       "Show active privileges for player", CommandStatus.OnStatusCommand);
         AddCommand("css_resetall", "Remove all player privileges",      CommandResetAll.OnResetAllCommand);
         AddCommand("resetall",     "Remove all player privileges",      CommandResetAll.OnResetAllCommand);
+        AddCommand("css_hp",       "Set HP for a player",               CommandHp.OnHpCommand);
+        AddCommand("hp",           "Set HP for a player",               CommandHp.OnHpCommand);
 
         try
         {
@@ -104,8 +106,16 @@ public class WallhackPluginCS2Core : BasePlugin, IPluginConfig<WallhackConfig>
         );
     }
 
+    public override void OnAllPluginsLoaded(bool hotReload)
+    {
+        SimpleAdminBridge.TryInit();
+        SimpleAdminBridge.RegisterMenus();
+    }
+
     public override void Unload(bool hotReload)
     {
+        SimpleAdminBridge.UnregisterMenus();
+
         try
         {
             if (Config.WallhackEnabled)

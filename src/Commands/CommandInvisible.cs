@@ -23,7 +23,7 @@ public class CommandInvisible
         string query = command.ArgString.Trim();
         if (string.IsNullOrWhiteSpace(query))
         {
-            Util.ServerPrintToChat(caller, "Usage: !invis <player> | !invisible <player>");
+            Toggle(caller!, caller!);
             return;
         }
 
@@ -33,27 +33,37 @@ public class CommandInvisible
             return;
         }
 
-        bool wasInvisible = Globals.InvisiblePlayers.Remove(player);
-        Invisible.RestorePlayer(player);
+        Toggle(caller!, player);
+    }
+
+    public static void Toggle(CCSPlayerController caller, CCSPlayerController target)
+    {
+        bool isSelf = caller.Slot == target.Slot;
+        bool silent = SimpleAdminBridge.IsAdminSilent(caller);
+
+        bool wasInvisible = Globals.InvisiblePlayers.Remove(target);
+        Invisible.RestorePlayer(target);
 
         if (!wasInvisible)
         {
-            Globals.InvisiblePlayers[player] = new SoundData(Server.CurrentTime - 0.01f, Server.CurrentTime - 0.01f)
+            Globals.InvisiblePlayers[target] = new SoundData(Server.CurrentTime - 0.01f, Server.CurrentTime - 0.01f)
             {
                 HackyReload = false,
                 RevealUntil = 0f
             };
         }
 
-        if (wasInvisible)
+        if (isSelf)
         {
-            Util.ServerPrintToChat(caller, $"{player.PlayerName} is now visible.");
-            Util.ServerPrintToChat(player, "You are now visible.");
+            Util.ServerPrintToChat(caller, wasInvisible ? "Invisible OFF." : "Invisible ON.");
         }
         else
         {
-            Util.ServerPrintToChat(caller, $"{player.PlayerName} is now invisible.");
-            Util.ServerPrintToChat(player, "You are now invisible!");
+            Util.ServerPrintToChat(caller, wasInvisible
+                ? $"{target.PlayerName} is now visible."
+                : $"{target.PlayerName} is now invisible.");
+            if (!silent)
+                Util.ServerPrintToChat(target, wasInvisible ? "You are now visible." : "You are now invisible!");
         }
     }
 }

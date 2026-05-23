@@ -21,25 +21,31 @@ public class CommandSpeed
         }
 
         string query = command.ArgString.Trim();
+
+        // No args → toggle speed for self at default multiplier
         if (string.IsNullOrWhiteSpace(query))
         {
-            Util.ServerPrintToChat(caller, "Usage: !speed <player>  |  !speed <multiplier> <player>");
+            Toggle(caller!, caller!);
             return;
         }
 
-        // If first token is a number treat it as the multiplier
         float multiplier = Speed.DefaultMultiplier;
         bool explicitMultiplier = false;
         string playerQuery = query;
 
         var tokens = query.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-        if (tokens.Length == 2 &&
-            float.TryParse(tokens[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed) &&
-            parsed > 0f)
+        if (float.TryParse(tokens[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed) && parsed > 0f)
         {
             multiplier = Math.Clamp(parsed, 0.1f, 10f);
-            playerQuery = tokens[1];
             explicitMultiplier = true;
+            playerQuery = tokens.Length >= 2 ? tokens[1] : "";
+        }
+
+        // Numeric-only arg → apply to self
+        if (explicitMultiplier && string.IsNullOrWhiteSpace(playerQuery))
+        {
+            ToggleWithMultiplier(caller!, caller!, multiplier, explicitMultiplier);
+            return;
         }
 
         if (!Util.TryResolveSinglePlayer(playerQuery, out var target, out var error, includeBots: true) || target == null)
@@ -48,17 +54,39 @@ public class CommandSpeed
             return;
         }
 
+        ToggleWithMultiplier(caller!, target, multiplier, explicitMultiplier);
+    }
+
+    // Used by SimpleAdmin bridge — toggles at default multiplier.
+    public static void Toggle(CCSPlayerController caller, CCSPlayerController target) =>
+        ToggleWithMultiplier(caller, target, Speed.DefaultMultiplier, false);
+
+    private static void ToggleWithMultiplier(CCSPlayerController caller, CCSPlayerController target,
+        float multiplier, bool explicitMultiplier)
+    {
+        bool isSelf = caller.Slot == target.Slot;
+        bool silent = SimpleAdminBridge.IsAdminSilent(caller);
+
         if (!explicitMultiplier && Globals.SpeedPlayers.Remove(target))
         {
-            // Pure toggle: had speed → remove it
-            Util.ServerPrintToChat(caller, $"Speed boost OFF for {target.PlayerName}.");
-            Util.ServerPrintToChat(target, "Speed boost has been removed.");
+            if (isSelf)
+                Util.ServerPrintToChat(caller, "Speed boost OFF.");
+            else
+            {
+                Util.ServerPrintToChat(caller, $"Speed boost OFF for {target.PlayerName}.");
+                if (!silent) Util.ServerPrintToChat(target, "Speed boost has been removed.");
+            }
         }
         else
         {
             Globals.SpeedPlayers[target] = multiplier;
-            Util.ServerPrintToChat(caller, $"Speed x{multiplier:0.##} ON for {target.PlayerName}.");
-            Util.ServerPrintToChat(target, $"You now have {multiplier:0.##}x speed!");
+            if (isSelf)
+                Util.ServerPrintToChat(caller, $"Speed x{multiplier:0.##} ON.");
+            else
+            {
+                Util.ServerPrintToChat(caller, $"Speed x{multiplier:0.##} ON for {target.PlayerName}.");
+                if (!silent) Util.ServerPrintToChat(target, $"You now have {multiplier:0.##}x speed!");
+            }
         }
     }
 }

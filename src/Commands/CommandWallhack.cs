@@ -1,4 +1,3 @@
-using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
@@ -21,7 +20,7 @@ public class CommandWallhack
         string query = command.ArgString.Trim();
         if (string.IsNullOrWhiteSpace(query))
         {
-            Util.ServerPrintToChat(caller, "Usage: !wh <player> | !wallhack <player>");
+            Toggle(caller!, caller!);
             return;
         }
 
@@ -31,16 +30,31 @@ public class CommandWallhack
             return;
         }
 
-        if (Globals.Wallhackers.Remove(target))
+        Toggle(caller!, target);
+    }
+
+    public static void Toggle(CCSPlayerController caller, CCSPlayerController target)
+    {
+        bool isSelf = caller.Slot == target.Slot;
+        bool silent = SimpleAdminBridge.IsAdminSilent(caller);
+        bool activated = !Globals.Wallhackers.Remove(target);
+
+        if (activated)
+            Globals.Wallhackers.Add(target);
+
+        if (isSelf)
         {
-            Util.ServerPrintToChat(caller, $"Wallhack OFF for {target.PlayerName}.");
-            Util.ServerPrintToChat(target, "Your wallhack has been removed.");
+            Util.ServerPrintToChat(caller, activated ? "Wallhack ON." : "Wallhack OFF.");
         }
         else
         {
-            Globals.Wallhackers.Add(target);
-            Util.ServerPrintToChat(caller, $"Wallhack ON for {target.PlayerName}.");
-            Util.ServerPrintToChat(target, "You now have wallhack!");
+            Util.ServerPrintToChat(caller, activated
+                ? $"Wallhack ON for {target.PlayerName}."
+                : $"Wallhack OFF for {target.PlayerName}.");
+            if (!silent)
+                Util.ServerPrintToChat(target, activated
+                    ? "You now have wallhack!"
+                    : "Your wallhack has been removed.");
         }
     }
 }

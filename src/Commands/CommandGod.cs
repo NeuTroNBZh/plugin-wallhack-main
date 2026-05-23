@@ -20,7 +20,7 @@ public class CommandGod
         string query = command.ArgString.Trim();
         if (string.IsNullOrWhiteSpace(query))
         {
-            Util.ServerPrintToChat(caller, "Usage: !god <player>");
+            Toggle(caller!, caller!);
             return;
         }
 
@@ -30,16 +30,31 @@ public class CommandGod
             return;
         }
 
-        if (Globals.GodPlayers.Remove(target))
+        Toggle(caller!, target);
+    }
+
+    public static void Toggle(CCSPlayerController caller, CCSPlayerController target)
+    {
+        bool isSelf = caller.Slot == target.Slot;
+        bool silent = SimpleAdminBridge.IsAdminSilent(caller);
+        bool activated = !Globals.GodPlayers.Remove(target);
+
+        if (activated)
+            Globals.GodPlayers.Add(target);
+
+        if (isSelf)
         {
-            Util.ServerPrintToChat(caller, $"God mode OFF for {target.PlayerName}.");
-            Util.ServerPrintToChat(target, "God mode has been removed.");
+            Util.ServerPrintToChat(caller, activated ? "God mode ON." : "God mode OFF.");
         }
         else
         {
-            Globals.GodPlayers.Add(target);
-            Util.ServerPrintToChat(caller, $"God mode ON for {target.PlayerName}.");
-            Util.ServerPrintToChat(target, "You now have god mode!");
+            Util.ServerPrintToChat(caller, activated
+                ? $"God mode ON for {target.PlayerName}."
+                : $"God mode OFF for {target.PlayerName}.");
+            if (!silent)
+                Util.ServerPrintToChat(target, activated
+                    ? "You now have god mode!"
+                    : "God mode has been removed.");
         }
     }
 }

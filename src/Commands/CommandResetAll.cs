@@ -18,7 +18,6 @@ public class CommandResetAll
             return;
         }
 
-        // Restore visibility for all invisible players before clearing
         foreach (var player in Globals.InvisiblePlayers.Keys.ToList())
         {
             if (Util.IsPlayerValid(player))
@@ -31,6 +30,10 @@ public class CommandResetAll
         Globals.SpeedPlayers.Clear();
         Globals.InfiniteMoneyPlayers.Clear();
 
-        Util.Broadcast("All player privileges have been reset.");
+        bool silent = SimpleAdminBridge.IsAdminSilent(caller!);
+        if (silent)
+            Util.ServerPrintToChat(caller!, "All player privileges have been reset.");
+        else
+            Util.Broadcast("All player privileges have been reset.");
     }
 }
