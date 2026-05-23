@@ -278,8 +278,6 @@ dotnet build WallhackPluginCS2.csproj -c Release
 
 Output: `bin/Release/net8.0/WallhackPluginCS2.dll`
 
-A release is automatically published to GitHub on every push when the `<Version>` in `WallhackPluginCS2.csproj` changes.
-
 ---
 
 ## Credits
