@@ -10,18 +10,20 @@ A Counter-Strike 2 server-side plugin built on [CounterStrikeSharp](https://docs
 ## Changes from the original
 
 - Reworked **Wallhack** — glow entities per player, selectively transmitted via `OnCheckTransmit`; per-team glow color (T and CT separate colors)
-- Reworked **Invisibility** — per-tick alpha blending, proper weapon and shadow hiding; target and admin both notified on toggle
+- Reworked **Invisibility** — permanent alpha 0 + transmit blocking; player and weapons fully hidden regardless of movement or actions
 - Invisible players no longer cast shadows or expose weapon models to other players
-- Wallhack temporarily reveals invisible enemies when they make noise (shoot, reload, plant/defuse)
 - Fixed **RCON** command
-- Fixed multiple server crash bugs
-- Improved command handling: aliases, partial name matching, permission validation
+- Fixed multiple server crash bugs (`WriteEnterPVS: GetEntServerClass failed`)
+- Improved command handling: aliases, partial name matching, permission validation, self-toggle (no argument = applies to yourself)
+- Silent mode: when [CS2-SimpleAdmin](https://github.com/daffyyyy/CS2-SimpleAdmin) is installed, commands respect the admin's silent mode — confirmations are not shown to the target player
+- **New — HP:** set any player's HP on demand, with preset options in the SimpleAdmin menu
 - **New — Infinite Money:** grants $65 535 permanently, auto-refilled on every purchase, spawn and round start
 - **New — God mode:** invincibility toggle, health restored every tick
-- **New — Speed boost:** configurable multiplier (default 1.5×), reset on toggle
+- **New — Speed boost:** configurable multiplier (default 1.5×), properly reset on toggle
 - **New — Slay / Slap:** kill or deal damage to a player
 - **New — Status:** view all active privileges for a player
 - **New — Reset All:** remove every privilege from every player at once
+- **New — CS2-SimpleAdmin integration:** a "Wallhack Plugin" category is automatically added to the `!admin` menu when SimpleAdmin is present
 
 ---
 
@@ -29,6 +31,7 @@ A Counter-Strike 2 server-side plugin built on [CounterStrikeSharp](https://docs
 
 - A CS2 dedicated server
 - [CounterStrikeSharp](https://docs.cssharp.dev/docs/guides/getting-started.html) installed
+- *(Optional)* [CS2-SimpleAdmin](https://github.com/daffyyyy/CS2-SimpleAdmin) for the admin menu integration
 
 ---
 
@@ -69,32 +72,34 @@ Add admins in `csgo/addons/counterstrikesharp/configs/admins.json`:
 
 ## Commands
 
+All player-targeting commands accept an optional `<player>` argument. If omitted, the command applies to **yourself**.
+
 ### Wallhack
 
 ```
-!wh <player>
-!wallhack <player>
+!wh [player]
+!wallhack [player]
 ```
 
-Toggles a glowing outline through walls for the target player's enemies. The target is notified. Run again to remove.
+Toggles a glowing outline through walls for the target's enemies. Run again to remove.
 
 ---
 
 ### Invisibility
 
 ```
-!invis <player>
-!invisible <player>
+!invis [player]
+!invisible [player]
 ```
 
-Toggles invisibility. The target is notified. Invisible players briefly reappear to wallhackers when they shoot, reload, or make noise.
+Toggles full invisibility — alpha 0 + entity hidden from all other players' transmit list. Permanent: the player stays invisible regardless of movement, shooting, or any action.
 
 ---
 
 ### God mode
 
 ```
-!god <player>
+!god [player]
 ```
 
 Toggles invincibility. Health is restored every server tick, preventing any lethal hit.
@@ -104,11 +109,24 @@ Toggles invincibility. Health is restored every server tick, preventing any leth
 ### Speed boost
 
 ```
-!speed <player>              → toggle 1.5× speed
-!speed <multiplier> <player> → set a custom multiplier (0.1–10)
+!speed [player]              → toggle 1.5× speed
+!speed <multiplier>          → set a custom multiplier for yourself (0.1–10)
+!speed <multiplier> [player] → set a custom multiplier for a player
 ```
 
-Running `!speed <player>` again when they already have speed removes it.
+Running `!speed [player]` again when they already have speed removes it and immediately resets their movement speed.
+
+---
+
+### HP
+
+```
+!hp <amount> [player]
+```
+
+Sets HP to the specified value immediately. If no player is given, applies to yourself. Values above the default max health also raise the max health bar.
+
+Examples: `!hp 150` · `!hp 300 PlayerName`
 
 ---
 
@@ -168,7 +186,7 @@ Displays all currently active privileges for the target player (wallhack, invisi
 !resetall
 ```
 
-Removes every privilege from every player at once and broadcasts to all players.
+Removes every privilege from every player at once. Broadcasts to all players (suppressed if SimpleAdmin silent mode is active).
 
 ---
 
@@ -192,6 +210,24 @@ All player-targeting commands accept partial names. Matching priority:
 4. Name contains query
 
 If multiple players match, the command lists them and asks you to be more specific.
+
+---
+
+## CS2-SimpleAdmin integration
+
+When [CS2-SimpleAdmin](https://github.com/daffyyyy/CS2-SimpleAdmin) is installed alongside this plugin, a **"Wallhack Plugin"** category is automatically added to the `!admin` menu with the following entries:
+
+| Menu entry | Action |
+|---|---|
+| Wallhack | Player picker → toggle wallhack |
+| Invisible | Player picker → toggle invisibility |
+| God Mode | Player picker → toggle god mode |
+| Speed Boost | Player picker → toggle speed (1.5×) |
+| Set HP | HP preset (100 / 150 / 200 / 250 / 300) → player picker |
+
+No extra configuration needed — the integration is detected automatically at startup.
+
+**Silent mode:** if an admin has SimpleAdmin's silent mode active, command confirmations are only shown to the admin, not to the affected player.
 
 ---
 
