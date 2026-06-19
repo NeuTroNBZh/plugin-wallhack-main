@@ -26,6 +26,8 @@ public static class Globals
 
     public static HashSet<CCSPlayerController> InvisiblePlayers { get; } = new();
 
+    public static Dictionary<CCSPlayerController, SoundData> InvisibleReveal { get; } = new();
+
     public static HashSet<CCSPlayerController> InfiniteMoneyPlayers { get; } = new();
 
     public static HashSet<CCSPlayerController> GodPlayers { get; } = new();
@@ -37,6 +39,7 @@ public static class Globals
         Wallhackers.Clear();
         GlowData.Clear();
         InvisiblePlayers.Clear();
+        InvisibleReveal.Clear();
         InfiniteMoneyPlayers.Clear();
         GodPlayers.Clear();
         SpeedPlayers.Clear();
