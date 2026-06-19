@@ -46,12 +46,15 @@ public class WallhackConfig : BasePluginConfig
 
     [JsonPropertyName("InvisibleRevealOnMove")]
     public bool InvisibleRevealOnMove { get; set; } = false;
+
+    // Bumped whenever new keys are added so CounterStrikeSharp merges them into existing config files on update
+    public override int Version { get; set; } = 2;
 }
 
 public class WallhackPluginCS2Core : BasePlugin, IPluginConfig<WallhackConfig>
 {
     public override string ModuleName => "Wallhack Plugin CS2";
-    public override string ModuleVersion => "2.3.0";
+    public override string ModuleVersion => "2.3.1";
     public override string ModuleAuthor => "NeuTroNBZh";
 
     public WallhackConfig Config { get; set; } = new();
