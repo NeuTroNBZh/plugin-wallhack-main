@@ -43,12 +43,15 @@ public class WallhackConfig : BasePluginConfig
 
     [JsonPropertyName("InfiniteMoneyEnabled")]
     public bool InfiniteMoneyEnabled { get; set; } = true;
+
+    [JsonPropertyName("InvisibleRevealOnMove")]
+    public bool InvisibleRevealOnMove { get; set; } = false;
 }
 
 public class WallhackPluginCS2Core : BasePlugin, IPluginConfig<WallhackConfig>
 {
     public override string ModuleName => "Wallhack Plugin CS2";
-    public override string ModuleVersion => "2.2.1";
+    public override string ModuleVersion => "2.3.0";
     public override string ModuleAuthor => "NeuTroNBZh";
 
     public WallhackConfig Config { get; set; } = new();
@@ -174,6 +177,7 @@ public class WallhackPluginCS2Core : BasePlugin, IPluginConfig<WallhackConfig>
         Config.WallhackEnabled     = config.WallhackEnabled;
         Config.InvisibleEnabled    = config.InvisibleEnabled;
         Config.InfiniteMoneyEnabled = config.InfiniteMoneyEnabled;
+        Config.InvisibleRevealOnMove = config.InvisibleRevealOnMove;
 
         Globals.Config = Config;
     }

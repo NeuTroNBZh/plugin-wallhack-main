@@ -12,6 +12,7 @@ A Counter-Strike 2 server-side plugin built on [CounterStrikeSharp](https://docs
 - Reworked **Wallhack** — glow entities per player, selectively transmitted via `OnCheckTransmit`; per-team glow color (T and CT separate colors)
 - Reworked **Invisibility** — permanent alpha 0 + transmit blocking; player and weapons fully hidden regardless of movement or actions
 - Invisible players no longer cast shadows or expose weapon models to other players
+- **New — Reveal-on-move invisibility:** optional mode (`InvisibleRevealOnMove` config key) — invisible while still, but revealed with a fade-out and a centered HUD gauge when moving, shooting, reloading, taking damage, planting or defusing
 - Fixed **RCON** command
 - Fixed multiple server crash bugs (`WriteEnterPVS: GetEntServerClass failed`)
 - Improved command handling: aliases, partial name matching, permission validation, self-toggle (no argument = applies to yourself)
@@ -93,6 +94,10 @@ Toggles a glowing outline through walls for the target's enemies. Run again to r
 ```
 
 Toggles full invisibility — alpha 0 + entity hidden from all other players' transmit list. Permanent: the player stays invisible regardless of movement, shooting, or any action.
+
+Two modes (server-side, via the `InvisibleRevealOnMove` config key):
+- **Permanent (default):** the player stays fully invisible regardless of any action.
+- **Reveal on move:** invisible while still, but momentarily revealed (fade-out) when making noise, shooting, reloading, taking damage, planting or defusing — with a centered HTML gauge showing the current visibility level.
 
 ---
 
@@ -252,6 +257,7 @@ csgo/addons/counterstrikesharp/configs/plugins/WallhackPluginCS2/WallhackPluginC
   "WallhackEnabled": true,
   "InvisibleEnabled": true,
   "InfiniteMoneyEnabled": true,
+  "InvisibleRevealOnMove": false,
   "ConfigVersion": 1
 }
 ```
@@ -265,6 +271,7 @@ csgo/addons/counterstrikesharp/configs/plugins/WallhackPluginCS2/WallhackPluginC
 | `WallhackEnabled` | Enable or disable the wallhack feature entirely |
 | `InvisibleEnabled` | Enable or disable the invisibility feature entirely |
 | `InfiniteMoneyEnabled` | Enable or disable the infinite money feature entirely |
+| `InvisibleRevealOnMove` | Mode d'invisibilité. `false` (défaut) = invisibilité permanente. `true` = invisible à l'arrêt, révélé en fondu au mouvement / tir / rechargement / dégâts / plant-defuse, avec une jauge HTML centrée indiquant le niveau de visibilité. |
 
 ---
 
