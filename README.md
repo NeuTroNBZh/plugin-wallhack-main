@@ -258,7 +258,7 @@ csgo/addons/counterstrikesharp/configs/plugins/WallhackPluginCS2/WallhackPluginC
   "InvisibleEnabled": true,
   "InfiniteMoneyEnabled": true,
   "InvisibleRevealOnMove": false,
-  "ConfigVersion": 1
+  "ConfigVersion": 2
 }
 ```
 
