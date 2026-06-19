@@ -10,7 +10,6 @@ namespace WallhackPluginCS2.Modules;
 public class Invisible
 {
     private const int GaugeSegments = 20;
-    private const float RevealWindow = 2.0f;
 
     private static readonly Dictionary<CEntityInstance, CCSPlayerController> HiddenEntities = new();
 
@@ -129,7 +128,7 @@ public class Invisible
             pawn.EntitySpottedState.Spotted = false;
             pawn.EntitySpottedState.SpottedByMask[0] = 0;
 
-            bool fullyHiddenFromOthers = Server.CurrentTime > data.RevealUntil;
+            bool fullyHiddenFromOthers = alphaByte == 0;
             if (fullyHiddenFromOthers)
             {
                 HiddenEntities[pawn] = owner;
@@ -195,7 +194,6 @@ public class Invisible
             return HookResult.Continue;
 
         SetPlayerInvisibleFor(player, @event.Duration * 2f);
-        ExtendRevealUntil(player);
         return HookResult.Continue;
     }
 
@@ -206,7 +204,6 @@ public class Invisible
             return HookResult.Continue;
 
         SetPlayerInvisibleFor(player, 0.5f);
-        ExtendRevealUntil(player);
         return HookResult.Continue;
     }
 
@@ -217,7 +214,6 @@ public class Invisible
             return HookResult.Continue;
 
         SetPlayerInvisibleFor(player, 0.5f);
-        ExtendRevealUntil(player);
         return HookResult.Continue;
     }
 
@@ -273,7 +269,6 @@ public class Invisible
         data.StartTime = Server.CurrentTime - 0.01f;
         data.EndTime = Server.CurrentTime - 0.01f;
         data.HackyReload = false;
-        data.RevealUntil = 0f;
 
         Globals.InvisibleReveal[player] = data;
     }
@@ -317,7 +312,6 @@ public class Invisible
         data.HackyReload = true;
         data.StartTime = Server.CurrentTime;
         data.EndTime = Server.CurrentTime + vData.DisallowAttackAfterReloadStartDuration;
-        data.RevealUntil = Math.Max(data.RevealUntil, Server.CurrentTime + RevealWindow);
     }
 
     private static float GetAlpha(SoundData data)
@@ -345,18 +339,6 @@ public class Invisible
 
         data.StartTime = Server.CurrentTime;
         data.EndTime = Server.CurrentTime + time;
-        Globals.InvisibleReveal[player] = data;
-    }
-
-    private static void ExtendRevealUntil(CCSPlayerController player)
-    {
-        if (!Globals.InvisiblePlayers.Contains(player))
-            return;
-
-        if (!Globals.InvisibleReveal.TryGetValue(player, out var data))
-            data = new SoundData();
-
-        data.RevealUntil = Server.CurrentTime + RevealWindow;
         Globals.InvisibleReveal[player] = data;
     }
 
