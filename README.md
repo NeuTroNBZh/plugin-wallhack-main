@@ -271,7 +271,7 @@ csgo/addons/counterstrikesharp/configs/plugins/WallhackPluginCS2/WallhackPluginC
 | `WallhackEnabled` | Enable or disable the wallhack feature entirely |
 | `InvisibleEnabled` | Enable or disable the invisibility feature entirely |
 | `InfiniteMoneyEnabled` | Enable or disable the infinite money feature entirely |
-| `InvisibleRevealOnMove` | Mode d'invisibilité. `false` (défaut) = invisibilité permanente. `true` = invisible à l'arrêt, révélé en fondu au mouvement / tir / rechargement / dégâts / plant-defuse, avec une jauge HTML centrée indiquant le niveau de visibilité. |
+| `InvisibleRevealOnMove` | Invisibility mode. `false` (default) = permanent invisibility. `true` = invisible while still, revealed with a fade-out on movement / shooting / reloading / taking damage / plant-defuse, with a centered HTML gauge showing the current visibility level. |
 
 ---
 
